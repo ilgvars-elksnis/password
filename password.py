@@ -2,12 +2,16 @@ import requests
 import hashlib
 import sys
 
+# first we make funtion that requests all hashes matching the the first 5 characters we ask
+
 def request_api_data(query_char):
   url = 'https://api.pwnedpasswords.com/range/' + query_char
   res = requests.get(url)
   if res.status_code != 200:
     raise RuntimeError(f'Error fetching: {res.status_code}, check the api and try again')
   return res
+
+# this function cycles through the requested hashes and filters the breech count we are looking for
 
 def get_password_leaks_count(hashes, hash_to_check):
   hashes = (line.split(':') for line in hashes.text.splitlines())
@@ -16,19 +20,23 @@ def get_password_leaks_count(hashes, hash_to_check):
       return count
   return 0
 
+#this function splits the password we want to check in two parts, then uses fucntions above to give result
+
 def pwned_api_check(password):
   sha1password = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
   first5_char, tail = sha1password[:5], sha1password[5:]
   response = request_api_data(first5_char)
   return get_password_leaks_count(response, tail)
 
+# function where we input our passwords then get results
+
 def main(args):
   for password in args:
     count = pwned_api_check(password)
     if count:
-      print(f'{password} was found {count} times... you should probably change your password!')
+      print(f'{password} was found {count} times. It is recommended you change your password.')
     else:
-      print(f'{password} was NOT found. Carry on!')
+      print(f'{password} was NOT found. Password is secure and has not been breeeched so far.')
   return 'done!'
 
 if __name__ == '__main__':
